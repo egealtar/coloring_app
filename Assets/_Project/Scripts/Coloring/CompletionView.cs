@@ -8,6 +8,8 @@ namespace OtsimoColoring.Coloring
     /// Renders the celebration overlay shown when a level is completed.
     /// The root GameObject stays active; visibility is driven by the
     /// CanvasGroup so the EventSystem can toggle interactivity safely.
+    /// On Show, the panel fades in while the content scales up with a
+    /// bounce, and the back button performs a small pulse to invite the tap.
     /// </summary>
     public class CompletionView : MonoBehaviour
     {
@@ -20,10 +22,14 @@ namespace OtsimoColoring.Coloring
         [SerializeField] private float _fadeDuration = 0.3f;
         [SerializeField] private float _scaleDuration = 0.45f;
         [SerializeField] private Ease _scaleEase = Ease.OutBack;
+        [SerializeField] private float _backButtonPulseDelay = 0.6f;
+        [SerializeField] private float _backButtonPulseScale = 1.08f;
+        [SerializeField] private float _backButtonPulseDuration = 0.6f;
 
         public System.Action OnBackPressed;
 
         private Sequence _showSequence;
+        private Tween _backButtonPulseTween;
 
         private void Awake()
         {
@@ -41,11 +47,14 @@ namespace OtsimoColoring.Coloring
                 _backToLevelsButton.onClick.RemoveListener(HandleBackClick);
             }
             _showSequence?.Kill();
+            _backButtonPulseTween?.Kill();
         }
 
         public void HideImmediate()
         {
             _showSequence?.Kill();
+            _backButtonPulseTween?.Kill();
+
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha = 0f;
@@ -55,6 +64,10 @@ namespace OtsimoColoring.Coloring
             if (_content != null)
             {
                 _content.localScale = Vector3.one;
+            }
+            if (_backToLevelsButton != null)
+            {
+                _backToLevelsButton.transform.localScale = Vector3.one;
             }
         }
 
@@ -83,6 +96,22 @@ namespace OtsimoColoring.Coloring
                 _showSequence.Join(
                     _content.DOScale(Vector3.one, _scaleDuration).SetEase(_scaleEase));
             }
+
+            _showSequence.AppendCallback(StartBackButtonPulse);
+        }
+
+        private void StartBackButtonPulse()
+        {
+            if (_backToLevelsButton == null) return;
+
+            _backButtonPulseTween?.Kill();
+            // Subtle, looping pulse to draw attention to the next action without
+            // being noisy. Yoyo so it scales up and back smoothly forever.
+            _backButtonPulseTween = _backToLevelsButton.transform
+                .DOScale(Vector3.one * _backButtonPulseScale, _backButtonPulseDuration)
+                .SetEase(Ease.InOutSine)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetDelay(_backButtonPulseDelay);
         }
 
         private void HandleBackClick()

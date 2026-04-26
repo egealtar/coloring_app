@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using OtsimoColoring.Config;
 using OtsimoColoring.Persistence;
 using UnityEngine;
@@ -8,7 +9,8 @@ namespace OtsimoColoring.Main
     /// <summary>
     /// Bootstraps the main menu: reads the level database, spawns a LevelCell
     /// for each entry, and loads the ColoringScene when a cell is tapped.
-    /// Dependencies are injected via the inspector (no singletons).
+    /// Highlights the first uncompleted cell with a gentle pulse so the
+    /// player sees the next level to play at a glance.
     /// </summary>
     public class MainSceneController : MonoBehaviour
     {
@@ -26,6 +28,7 @@ namespace OtsimoColoring.Main
         [SerializeField] private OtsimoColoring.App.SceneTransition _transition;
 
         private ProgressStore _progressStore;
+        private readonly List<LevelCell> _spawnedCells = new List<LevelCell>();
 
         private void Awake()
         {
@@ -36,6 +39,7 @@ namespace OtsimoColoring.Main
         {
             ValidateReferences();
             BuildGrid();
+            HighlightNextLevel();
         }
 
         private void ValidateReferences()
@@ -67,6 +71,26 @@ namespace OtsimoColoring.Main
                 bool isCompleted = _progressStore.IsLevelCompleted(level.UniqueId);
                 cell.Bind(level, isCompleted);
                 cell.OnSelected += HandleLevelSelected;
+                _spawnedCells.Add(cell);
+            }
+        }
+
+        private void HighlightNextLevel()
+        {
+            // The first uncompleted cell pulses; everything else stays still.
+            // If the player has finished every level, no pulse is shown.
+            bool foundNextUp = false;
+            foreach (var cell in _spawnedCells)
+            {
+                if (!foundNextUp && !cell.IsCompleted)
+                {
+                    cell.SetNextUp(true);
+                    foundNextUp = true;
+                }
+                else
+                {
+                    cell.SetNextUp(false);
+                }
             }
         }
 
