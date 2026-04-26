@@ -40,12 +40,6 @@ namespace OtsimoColoring.Coloring
                 ? _paletteConfig.GetColor(_selectedIndex)
                 : Color.black;
 
-        // Temporary auto-build for testing - will be removed when ColoringSceneController is ready
-        private void Start()
-        {
-            Build(0);
-        }
-
         public void Build(int initialSelectedIndex)
         {
             ClearExisting();
@@ -70,13 +64,11 @@ namespace OtsimoColoring.Coloring
 
         private void SpawnSwatch(int index)
         {
-            // Instantiate as child of container, preserving local-space transform
             var swatch = Instantiate(_swatchPrefab, _swatchContainer, false);
             swatch.gameObject.name = $"Swatch_{index}";
             swatch.Bind(index, _paletteConfig.GetColor(index));
-            //swatch.OnSelected += HandleSwatchSelected;
+            swatch.OnSelected += HandleSwatchSelected;
 
-            // Force a clean RectTransform regardless of what the prefab held
             var rt = swatch.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 1f);
             rt.anchorMax = new Vector2(0.5f, 1f);
@@ -106,8 +98,10 @@ namespace OtsimoColoring.Coloring
 
         private void HandleSwatchSelected(int index)
         {
+            Debug.Log($"[Palette] HandleSwatchSelected: index={index}, currentSelected={_selectedIndex}");
             if (index == _selectedIndex)
             {
+                Debug.Log($"[Palette] Already selected, skipping");
                 return;
             }
             ApplySelection(index, animate: true);
@@ -115,8 +109,11 @@ namespace OtsimoColoring.Coloring
 
         private void ApplySelection(int index, bool animate)
         {
+            Debug.Log($"[Palette] ApplySelection: index={index}, animate={animate}, swatchCount={_swatches.Count}");
+            
             for (int i = 0; i < _swatches.Count; i++)
             {
+                Debug.Log($"[Palette] Calling SetSelected({i == index}) on swatch_{i}");
                 _swatches[i].SetSelected(i == index, animate);
             }
 

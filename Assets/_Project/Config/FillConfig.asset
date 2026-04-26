@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b4098ffe502f0498d17fd018a276b9, type: 3}
   m_Name: FillConfig
   m_EditorClassIdentifier: 
-  _colorTolerance: 0.1
-  _outlineBrightnessThreshold: 0.2
+  _colorTolerance: 0.05
+  _outlineBrightnessThreshold: 0.9
   _completionThreshold: 0.9
   _pixelsPerFrame: 4000

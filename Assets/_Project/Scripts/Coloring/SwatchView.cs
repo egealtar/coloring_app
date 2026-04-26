@@ -4,11 +4,6 @@ using UnityEngine.UI;
 
 namespace OtsimoColoring.Coloring
 {
-    /// <summary>
-    /// A single color swatch in the palette toolbar.
-    /// Owns its own selection visuals and selection bounce animation.
-    /// Selection state is driven externally by PaletteView.
-    /// </summary>
     [RequireComponent(typeof(Button))]
     public class SwatchView : MonoBehaviour
     {
@@ -29,6 +24,8 @@ namespace OtsimoColoring.Coloring
 
         private void Awake()
         {
+            Debug.Log($"[Swatch] Awake called on {gameObject.name}. Outline component on this GameObject? {GetComponent<Outline>() != null}. _selectionOutline assigned? {_selectionOutline != null}. _colorImage assigned? {_colorImage != null}");
+
             if (_button == null)
             {
                 _button = GetComponent<Button>();
@@ -48,42 +45,48 @@ namespace OtsimoColoring.Coloring
         public void Bind(int index, Color color)
         {
             _index = index;
+            Debug.Log($"[Swatch_{_index}] Bind called. Color={color} (a={color.a}). gameObject={gameObject.name}");
+            
             if (_colorImage != null)
             {
                 _colorImage.color = color;
+                Debug.Log($"[Swatch_{_index}] After setting color, _colorImage.color={_colorImage.color}");
             }
+            else
+            {
+                Debug.LogWarning($"[Swatch_{_index}] _colorImage is NULL!");
+            }
+            
             SetSelected(false, animate: false);
         }
 
         public void SetSelected(bool isSelected, bool animate)
         {
-            Debug.Log($"SetSelected called: isSelected={isSelected}, animate={animate}, outline null? {_selectionOutline == null}");
+            Debug.Log($"[Swatch_{_index}] SetSelected: isSel={isSelected}, animate={animate}, outlineNull={_selectionOutline == null}, currentScale={transform.localScale.x}");
 
             if (_selectionOutline != null)
             {
+                bool wasEnabled = _selectionOutline.enabled;
                 _selectionOutline.enabled = isSelected;
-            }
-
-            float targetScale = isSelected ? _selectScale : 1f;
-
-            _scaleTween?.Kill();
-
-            if (animate)
-            {
-                _scaleTween = transform
-                    .DOScale(targetScale, _bounceDuration)
-                    .SetEase(_bounceEase);
+                Debug.Log($"[Swatch_{_index}] Outline.enabled: {wasEnabled} -> {_selectionOutline.enabled}");
             }
             else
             {
-                transform.localScale = Vector3.one * targetScale;
+                Debug.LogWarning($"[Swatch_{_index}] _selectionOutline is NULL, can't toggle outline!");
             }
+
+            float targetScale = isSelected ? _selectScale : 1f;
+            Debug.Log($"[Swatch_{_index}] targetScale={targetScale}, _selectScale={_selectScale}");
+
+            _scaleTween?.Kill();
+            transform.localScale = Vector3.one * targetScale;
+            
+            Debug.Log($"[Swatch_{_index}] After set, localScale={transform.localScale.x}");
         }
 
         private void HandleClick()
         {
-            Debug.Log($"SwatchView {_index} clicked");
-
+            Debug.Log($"[Swatch_{_index}] HandleClick! gameObject={gameObject.name}, OnSelected null? {OnSelected == null}");
             OnSelected?.Invoke(_index);
         }
     }
