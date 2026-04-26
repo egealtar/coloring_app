@@ -15,6 +15,7 @@ namespace OtsimoColoring.Coloring
         [SerializeField] private FillConfig _fillConfig;
 
         public bool IsCompleted { get; private set; }
+
         public float CurrentRatio => _totalPaintable > 0
             ? (float)_paintedSoFar / _totalPaintable
             : 0f;
@@ -33,8 +34,6 @@ namespace OtsimoColoring.Coloring
 
         public void RegisterFilledPixels(int newlyFilled)
         {
-            Debug.Log($"[CompletionDetector] RegisterFilledPixels: newlyFilled={newlyFilled}, ratio={CurrentRatio:F2}, IsCompleted={IsCompleted}, OnCompleted subscribers={(OnCompleted == null ? 0 : OnCompleted.GetInvocationList().Length)}");
-
             if (IsCompleted || newlyFilled <= 0)
             {
                 return;

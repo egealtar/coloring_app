@@ -22,6 +22,9 @@ namespace OtsimoColoring.Main
         [Header("Scene Navigation")]
         [SerializeField] private string _coloringSceneName = "ColoringScene";
 
+        [Header("Transition")]
+        [SerializeField] private OtsimoColoring.App.SceneTransition _transition;
+
         private ProgressStore _progressStore;
 
         private void Awake()
@@ -70,7 +73,14 @@ namespace OtsimoColoring.Main
         private void HandleLevelSelected(LevelData level)
         {
             SelectedLevel.Current = level;
-            SceneManager.LoadScene(_coloringSceneName);
+            if (_transition != null)
+            {
+                _transition.FadeOutAndLoad(_coloringSceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(_coloringSceneName);
+            }
         }
     }
 }

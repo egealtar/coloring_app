@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: FillConfig
   m_EditorClassIdentifier: 
   _colorTolerance: 0
-  _outlineBrightnessThreshold: 0
+  _outlineBrightnessThreshold: 0.6
   _completionThreshold: 0.9
   _pixelsPerFrame: 4000

@@ -6,11 +6,10 @@ namespace OtsimoColoring.Coloring
 {
     /// <summary>
     /// Owns the displayed line-art texture and a separate logic buffer that
-    /// flood fill operates on. The logic buffer treats transparent pixels as
-    /// solid white so fill regions are well-defined; the display texture keeps
-    /// the original art (including transparency) for visual fidelity. When the
-    /// user paints, the new color is written to BOTH buffers so the visible
-    /// canvas updates and subsequent fills see the painted region correctly.
+    /// flood fill operates on. Transparent pixels in the source are treated
+    /// as paintable white in the logic buffer, while any pixel that the
+    /// artist actually drew (alpha > 0) is preserved and used to detect
+    /// outlines, so even faint AA strokes block the fill from leaking.
     /// </summary>
     public class CanvasController : MonoBehaviour
     {
@@ -21,10 +20,13 @@ namespace OtsimoColoring.Coloring
         [Header("Config")]
         [SerializeField] private FillConfig _fillConfig;
 
-        // Logic buffer: transparent pixels composited onto white, used by the
-        // flood-fill algorithm and outline detection.
+        // Logic buffers used by the flood-fill algorithm.
         private Color32[] _sourcePixels;
         private Color32[] _workingPixels;
+
+        // True for pixels the artist actually drew (alpha > 0 in the original).
+        // Anything in this set blocks the fill, regardless of brightness.
+        private bool[] _isInkMask;
 
         // Display buffer + texture: original art preserved, painted on top.
         private Color32[] _displayPixels;
@@ -53,40 +55,39 @@ namespace OtsimoColoring.Coloring
 
             _sourcePixels = new Color32[len];
             _displayPixels = new Color32[len];
+            _isInkMask = new bool[len];
 
-            // Build both buffers from the original art:
-            // - _displayPixels keeps the raw pixel (with original alpha) for visuals.
-            // - _sourcePixels composites onto white so flood fill has a solid surface.
+            // Treat any drawn pixel (alpha > 0) as ink. The flood fill respects
+            // this mask so faint anti-aliased line ends still block the fill.
+            const byte inkAlphaCutoff = 16;
+
             for (int i = 0; i < len; i++)
             {
                 var p = rawPixels[i];
                 _displayPixels[i] = p;
 
-                if (p.a == 0)
+                if (p.a < inkAlphaCutoff)
                 {
+                    // Effectively transparent → paintable white in logic buffer.
                     _sourcePixels[i] = new Color32(255, 255, 255, 255);
+                    _isInkMask[i] = false;
                 }
-                else if (p.a < 255)
+                else
                 {
+                    // Drawn pixel → composite onto white for visual fidelity but
+                    // mark it as ink so the fill won't cross it.
                     float a = p.a / 255f;
                     byte r = (byte)Mathf.RoundToInt(p.r * a + 255 * (1 - a));
                     byte g = (byte)Mathf.RoundToInt(p.g * a + 255 * (1 - a));
                     byte b = (byte)Mathf.RoundToInt(p.b * a + 255 * (1 - a));
                     _sourcePixels[i] = new Color32(r, g, b, 255);
-                }
-                else
-                {
-                    _sourcePixels[i] = new Color32(p.r, p.g, p.b, 255);
+                    _isInkMask[i] = true;
                 }
             }
 
             _workingPixels = new Color32[len];
             System.Array.Copy(_sourcePixels, _workingPixels, len);
 
-            // Display texture: starts as the original art. Paint operations
-            // overwrite individual pixels here so the user sees the result while
-            // the original line-art (with its transparency) shows through everywhere
-            // they haven't painted yet.
             _displayTexture = new Texture2D(_width, _height, TextureFormat.RGBA32, false);
             _displayTexture.filterMode = FilterMode.Point;
             _displayTexture.wrapMode = TextureWrapMode.Clamp;
@@ -136,11 +137,6 @@ namespace OtsimoColoring.Coloring
             return _workingPixels[y * _width + x];
         }
 
-        /// <summary>
-        /// Write a paint color to both the logic buffer (so future fills see the
-        /// painted region) and the display buffer (so the user actually sees the
-        /// new color rather than the original transparent line-art).
-        /// </summary>
         public void SetWorkingPixel(int x, int y, Color32 color)
         {
             int idx = y * _width + x;
@@ -157,9 +153,19 @@ namespace OtsimoColoring.Coloring
 
         public bool IsOutlinePixel(int x, int y)
         {
+            // Primary check: the artist drew here (any alpha above the cutoff).
+            // This catches faint AA strokes that brightness alone would miss.
+            if (_isInkMask != null && _isInkMask[y * _width + x])
+            {
+                return true;
+            }
+
+            // Secondary check: brightness, kept as a fallback for line-art that
+            // ships without alpha (e.g., a fully opaque white background).
             var p = _sourcePixels[y * _width + x];
             float brightness = (p.r + p.g + p.b) / (3f * 255f);
-            return brightness < (_fillConfig != null ? _fillConfig.OutlineBrightnessThreshold : 0.2f);
+            float threshold = _fillConfig != null ? _fillConfig.OutlineBrightnessThreshold : 0.5f;
+            return brightness < threshold;
         }
 
         public Color32[] WorkingPixelsBuffer => _workingPixels;

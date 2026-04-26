@@ -27,6 +27,9 @@ namespace OtsimoColoring.Coloring
         [Header("Scene Navigation")]
         [SerializeField] private string _mainSceneName = "MainScene";
 
+        [Header("Transition")]
+        [SerializeField] private OtsimoColoring.App.SceneTransition _transition;
+
         private ProgressStore _progressStore;
         private ColorStore _colorStore;
         private Color _currentColor = Color.black;
@@ -46,8 +49,6 @@ namespace OtsimoColoring.Coloring
 
         private void OnEnable()
         {
-            Debug.Log($"[Coloring] OnEnable called. _completionDetector null? {_completionDetector == null}");
-            
             if (_palette != null)
             {
                 _palette.OnColorSelected += HandleColorSelected;
@@ -55,7 +56,6 @@ namespace OtsimoColoring.Coloring
             if (_completionDetector != null)
             {
                 _completionDetector.OnCompleted += HandleLevelCompleted;
-                Debug.Log("[Coloring] Subscribed to OnCompleted");
             }
             if (_completionView != null)
             {
@@ -123,8 +123,6 @@ namespace OtsimoColoring.Coloring
 
         public void HandleCanvasTap(PointerEventData eventData)
         {
-            Debug.Log($"[Coloring] Tap received. inputLocked={_inputLocked}, isFilling={_floodFill.IsFilling}, completed={_completionDetector.IsCompleted}, ratio={_completionDetector.CurrentRatio:F2}");
-
             if (_inputLocked || _floodFill.IsFilling || _canvas == null)
             {
                 return;
@@ -147,8 +145,6 @@ namespace OtsimoColoring.Coloring
 
         private void HandleLevelCompleted()
         {
-            Debug.Log("[Coloring] HandleLevelCompleted called!");
-
             _inputLocked = true;
             var level = SelectedLevel.Current;
             if (level != null)
@@ -160,7 +156,14 @@ namespace OtsimoColoring.Coloring
 
         private void GoToMainScene()
         {
-            SceneManager.LoadScene(_mainSceneName);
+            if (_transition != null)
+            {
+                _transition.FadeOutAndLoad(_mainSceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(_mainSceneName);
+            }
         }
     }
 }

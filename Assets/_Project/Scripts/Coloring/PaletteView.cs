@@ -98,10 +98,8 @@ namespace OtsimoColoring.Coloring
 
         private void HandleSwatchSelected(int index)
         {
-            Debug.Log($"[Palette] HandleSwatchSelected: index={index}, currentSelected={_selectedIndex}");
             if (index == _selectedIndex)
             {
-                Debug.Log($"[Palette] Already selected, skipping");
                 return;
             }
             ApplySelection(index, animate: true);
@@ -109,11 +107,8 @@ namespace OtsimoColoring.Coloring
 
         private void ApplySelection(int index, bool animate)
         {
-            Debug.Log($"[Palette] ApplySelection: index={index}, animate={animate}, swatchCount={_swatches.Count}");
-            
             for (int i = 0; i < _swatches.Count; i++)
             {
-                Debug.Log($"[Palette] Calling SetSelected({i == index}) on swatch_{i}");
                 _swatches[i].SetSelected(i == index, animate);
             }
 
