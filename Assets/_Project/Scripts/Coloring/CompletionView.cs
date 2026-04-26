@@ -6,13 +6,12 @@ namespace OtsimoColoring.Coloring
 {
     /// <summary>
     /// Renders the celebration overlay shown when a level is completed.
-    /// Animates in via DOTween, blocks all underlying input through its
-    /// CanvasGroup, and exposes a Back button hook for the scene controller.
+    /// The root GameObject stays active; visibility is driven by the
+    /// CanvasGroup so the EventSystem can toggle interactivity safely.
     /// </summary>
     public class CompletionView : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private GameObject _root;
         [SerializeField] private CanvasGroup _canvasGroup;
         [SerializeField] private RectTransform _content;
         [SerializeField] private Button _backToLevelsButton;
@@ -53,18 +52,14 @@ namespace OtsimoColoring.Coloring
                 _canvasGroup.interactable = false;
                 _canvasGroup.blocksRaycasts = false;
             }
-            if (_root != null)
+            if (_content != null)
             {
-                _root.SetActive(false);
+                _content.localScale = Vector3.one;
             }
         }
 
         public void Show()
         {
-            if (_root != null)
-            {
-                _root.SetActive(true);
-            }
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha = 0f;

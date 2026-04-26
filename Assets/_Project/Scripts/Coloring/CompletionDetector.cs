@@ -33,6 +33,8 @@ namespace OtsimoColoring.Coloring
 
         public void RegisterFilledPixels(int newlyFilled)
         {
+            Debug.Log($"[CompletionDetector] RegisterFilledPixels: newlyFilled={newlyFilled}, ratio={CurrentRatio:F2}, IsCompleted={IsCompleted}, OnCompleted subscribers={(OnCompleted == null ? 0 : OnCompleted.GetInvocationList().Length)}");
+
             if (IsCompleted || newlyFilled <= 0)
             {
                 return;

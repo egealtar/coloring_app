@@ -46,6 +46,8 @@ namespace OtsimoColoring.Coloring
 
         private void OnEnable()
         {
+            Debug.Log($"[Coloring] OnEnable called. _completionDetector null? {_completionDetector == null}");
+            
             if (_palette != null)
             {
                 _palette.OnColorSelected += HandleColorSelected;
@@ -53,6 +55,7 @@ namespace OtsimoColoring.Coloring
             if (_completionDetector != null)
             {
                 _completionDetector.OnCompleted += HandleLevelCompleted;
+                Debug.Log("[Coloring] Subscribed to OnCompleted");
             }
             if (_completionView != null)
             {
@@ -120,6 +123,8 @@ namespace OtsimoColoring.Coloring
 
         public void HandleCanvasTap(PointerEventData eventData)
         {
+            Debug.Log($"[Coloring] Tap received. inputLocked={_inputLocked}, isFilling={_floodFill.IsFilling}, completed={_completionDetector.IsCompleted}, ratio={_completionDetector.CurrentRatio:F2}");
+
             if (_inputLocked || _floodFill.IsFilling || _canvas == null)
             {
                 return;
@@ -142,6 +147,8 @@ namespace OtsimoColoring.Coloring
 
         private void HandleLevelCompleted()
         {
+            Debug.Log("[Coloring] HandleLevelCompleted called!");
+
             _inputLocked = true;
             var level = SelectedLevel.Current;
             if (level != null)
